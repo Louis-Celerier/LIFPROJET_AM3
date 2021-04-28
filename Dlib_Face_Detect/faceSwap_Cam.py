@@ -6,7 +6,7 @@ import dlib
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor("ressources/shape_predictor_68_face_landmarks.dat")
 src = cv2.imread('ressources/training-originals/0000_00000001.jpg')
-target = cv2.imread('ressources/training-originals/0001_00000001.jpg')
+cam = cv2.VideoCapture(0)
 
 
 def get_landmarks(face, gray_img):
@@ -40,7 +40,7 @@ def triangulation_point(triangle_id, points_landmarks, points, target=False):
 
     cv2.fillConvexPoly(cropped_t_mask, points, 255)
 
-    if(not target):
+    if not target:
         cropped_triangle = src[y: y + h, x: x + w]
         return (points, cropped_triangle)
     else:
@@ -48,10 +48,7 @@ def triangulation_point(triangle_id, points_landmarks, points, target=False):
         
 
 gray_src = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
-gray_target = cv2.cvtColor(target, cv2.COLOR_BGR2GRAY)
 mask = np.zeros_like(gray_src)
-height, width, channels = target.shape
-new_face = np.zeros((height, width, channels), np.uint8)
 
 # Source
 faces = detector(gray_src)
@@ -92,50 +89,57 @@ for f in faces:
             triangles_ids.append(triangle)
 
 # Target
-faces2 = detector(gray_target)
-for f in faces2:
-    points_landmarks2 = get_landmarks(f, gray_target)
-    points2 = np.array(points_landmarks2, np.int32)
-    convexhull2 = cv2.convexHull(points2)
-
-# Triangulation des 2 faces
-for triangle_id in triangles_ids:
-    # 1ere Face
-    (points, cropped_triangle) = triangulation_point(triangle_id, points_landmarks, points)
-
-    # 2eme Face
-    (points2, cropped_t2_mask, x, y, w, h) = triangulation_point(triangle_id, points_landmarks2, points2, True)
-
-    # Deformation des triangles
-    points = np.float32(points)
-    points2 = np.float32(points2)
-    matrix = cv2.getAffineTransform(points, points2)
-    triangle_warped = cv2.warpAffine(cropped_triangle, matrix, (w, h))
-    triangle_warped = cv2.bitwise_and(triangle_warped, triangle_warped, mask=cropped_t2_mask)
-
-    # Reconstruction des points
-    new_face_rect_area = new_face[y: y + h, x: x + w]
-    gray_new_face_rect_area = cv2.cvtColor(new_face_rect_area, cv2.COLOR_BGR2GRAY)
-    _, mask_triangles_designed = cv2.threshold(gray_new_face_rect_area, 1, 255, cv2.THRESH_BINARY_INV)
-    triangle_warped = cv2.bitwise_and(triangle_warped, triangle_warped, mask=mask_triangles_designed)
-    new_face_rect_area = cv2.add(new_face_rect_area, triangle_warped)
-    new_face[y: y + h, x: x + w] = new_face_rect_area
-
-# FaceSwaping
-mask_target_face = np.zeros_like(gray_target)
-mask_target_head = cv2.fillConvexPoly(mask_target_face, convexhull2, 255)
-mask_target_face = cv2.bitwise_not(mask_target_head)
-
-noface_target_head = cv2.bitwise_and(target, target, mask=mask_target_face)
-result = cv2.add(noface_target_head, new_face)
-(x, y, w, h) = cv2.boundingRect(convexhull2)
-center_face = (int((x + x + w) / 2), int((y + y + h) / 2))
-
-target_with_color = cv2.seamlessClone(result, target, mask_target_head, center_face, cv2.MIXED_CLONE)
-
 while True:
+    _,target = cam.read()
+    gray_target = cv2.cvtColor(target, cv2.COLOR_BGR2GRAY)
+    height, width, channels = target.shape
+    new_face = np.zeros((height, width, channels), np.uint8)
+    faces2 = detector(gray_target)
+    for f in faces2:
+        points_landmarks2 = get_landmarks(f, gray_target)
+        points2 = np.array(points_landmarks2, np.int32)
+        convexhull2 = cv2.convexHull(points2)
+
+    # Triangulation des 2 faces
+    for triangle_id in triangles_ids:
+        # 1ere Face
+        (points, cropped_triangle) = triangulation_point(triangle_id, points_landmarks, points)
+
+        # 2eme Face
+        (points2, cropped_t2_mask, x, y, w, h) = triangulation_point(triangle_id, points_landmarks2, points2, True)
+
+        # Deformation des triangles
+        points = np.float32(points)
+        points2 = np.float32(points2)
+        matrix = cv2.getAffineTransform(points, points2)
+        triangle_warped = cv2.warpAffine(cropped_triangle, matrix, (w, h))
+        triangle_warped = cv2.bitwise_and(triangle_warped, triangle_warped, mask=cropped_t2_mask)
+
+        # Reconstruction des points
+        new_face_rect_area = new_face[y: y + h, x: x + w]
+        gray_new_face_rect_area = cv2.cvtColor(new_face_rect_area, cv2.COLOR_BGR2GRAY)
+        gray_new_face_rect_area, mask_triangles_designed = cv2.threshold(gray_new_face_rect_area, 1, 255, cv2.THRESH_BINARY_INV)
+        triangle_warped = cv2.bitwise_and(triangle_warped, triangle_warped, mask=mask_triangles_designed)
+        new_face_rect_area = cv2.add(new_face_rect_area, triangle_warped)
+        new_face[y: y + h, x: x + w] = new_face_rect_area
+
+    # FaceSwaping
+    mask_target_face = np.zeros_like(gray_target)
+    mask_target_head = cv2.fillConvexPoly(mask_target_face, convexhull2, 255)
+    mask_target_face = cv2.bitwise_not(mask_target_head)
+
+    noface_target_head = cv2.bitwise_and(target, target, mask=mask_target_face)
+    result = cv2.add(noface_target_head, new_face)
+    (x, y, w, h) = cv2.boundingRect(convexhull2)
+    center_face = (int((x + x + w) / 2), int((y + y + h) / 2))
+
+    target_with_color = cv2.seamlessClone(result, target, mask_target_head, center_face, cv2.MIXED_CLONE)
+
+
     cv2.imshow("FaceSwap", target_with_color)
     key = cv2.waitKey(1)
     if key == 27:
         break
+        
+cam.release()
 cv2.destroyAllWindows()
