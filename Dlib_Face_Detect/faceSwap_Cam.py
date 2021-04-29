@@ -89,6 +89,7 @@ for f in faces:
             triangles_ids.append(triangle)
 
 # Target
+points_landmarks2 = None
 while True:
     _,target = cam.read()
     gray_target = cv2.cvtColor(target, cv2.COLOR_BGR2GRAY)
