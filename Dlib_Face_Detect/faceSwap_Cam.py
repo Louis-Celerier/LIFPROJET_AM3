@@ -4,7 +4,7 @@ import dlib
 
 
 detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor("ressources/shape_predictor_68_face_landmarks.dat")
+predictor = dlib.shape_predictor("ressources/shape_predictor_81_face_landmarks.dat")
 src = cv2.imread('ressources/training-originals/0000_00000001.jpg')
 cam = cv2.VideoCapture(0)
 
