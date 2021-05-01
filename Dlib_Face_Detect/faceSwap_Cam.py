@@ -85,8 +85,7 @@ for f in faces:
         id_p3 = extract_index_nparray(id_p3)
         
         if id_p1 is not None and id_p2 is not None and id_p3 is not None:
-            triangle = [id_p1, id_p2, id_p3]
-            triangles_ids.append(triangle)
+            triangles_ids.append([id_p1, id_p2, id_p3])
 
 # Target
 points_landmarks2 = None
@@ -100,7 +99,8 @@ while True:
         points_landmarks2 = get_landmarks(f, gray_target)
         points2 = np.array(points_landmarks2, np.int32)
         convexhull2 = cv2.convexHull(points2)
-
+    if points_landmarks2 == None:
+        continue
     # Triangulation des 2 faces
     for triangle_id in triangles_ids:
         # 1ere Face

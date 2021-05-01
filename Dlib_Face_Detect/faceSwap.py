@@ -88,8 +88,7 @@ for f in faces:
         id_p3 = extract_index_nparray(id_p3)
         
         if id_p1 is not None and id_p2 is not None and id_p3 is not None:
-            triangle = [id_p1, id_p2, id_p3]
-            triangles_ids.append(triangle)
+            triangles_ids.append([id_p1, id_p2, id_p3])
 
 # Target
 faces2 = detector(gray_target)
