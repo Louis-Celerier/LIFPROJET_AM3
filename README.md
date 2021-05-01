@@ -26,8 +26,11 @@ REQUIS :
 *********************
 
 Python : 3.8.7
+
 Tensorflow : 2.4.1
+
 OpenCV Python : 4.5.1.48
+
 Dlib : 19.21.1
 
 (Ligne de commande d'installation disponible dans le fichier requirements.txt)
