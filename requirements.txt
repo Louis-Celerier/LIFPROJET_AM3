@@ -1,7 +1,9 @@
 python==3.8.7
+jupyter==lastest
 tensorflow==2.4.1
 opencv-python==4.5.1.48
 dlib==19.21.1
+matplotlib==lastest
 
-sudo apt-get install python3.8 && python3 -m pip install tensorflow==2.4.1 && python3 -m pip install opencv-python==4.5.1.48 && python3 -m pip install dlib==19.21.1
+sudo apt-get install python3.8 && sudo apt-get install jupyter && python3 -m pip install tensorflow==2.4.1 && python3 -m pip install opencv-python==4.5.1.48 && python3 -m pip install dlib==19.21.1 && python3 -m pip install matplotlib
 
